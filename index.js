@@ -6,6 +6,7 @@ const hbs = require("express-handlebars");
 const fs = require("fs");
 const chalk = require("chalk");
 const server = require("http").Server(app);
+const { MongoClient } = require("mongodb");
 const { Signale } = require("signale");
 
 const signaleOptions = {
@@ -39,8 +40,35 @@ log.config({
 	displayFilename: true,
 });
 
+connection = {
+	url: "localhost",
+	port: "27017",
+	db: "servers",
+};
+url = `mongodb://${connection.url}:${connection.port}/${connection.db}`;
+
+MongoClient.connect(url, function (err, client) {
+	if (err) throw err;
+});
+
+app.post("/api/server/:server/create/", (req, res) => {
+	MongoClient.connect(url, function (err, client) {
+		let collection = client.db(req.params.server);
+
+		collection.createCollection("issues", function (err, res) {
+			if (err) throw err;
+			console.log("Collection created!");
+		});
+
+		if (err) throw err;
+		res.send("created");
+	});
+});
+
 app.get("/api/server/:server/issues/", (req, res) => {
 	res.send();
+	console.log(req.query);
+	console.log(req.params);
 });
 
 server.listen(port, () => log.startup(`Listening on port ${port}!`));
