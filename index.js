@@ -8,6 +8,7 @@ const chalk = require("chalk");
 const server = require("http").Server(app);
 const { MongoClient } = require("mongodb");
 const { Signale } = require("signale");
+const { query } = require("express");
 
 const signaleOptions = {
 	stream: process.stdout,
@@ -65,8 +66,43 @@ app.post("/api/server/:server/create/", (req, res) => {
 	});
 });
 
+app.post("/api/server/:server/issues/create/", (req, res) => {
+	MongoClient.connect(url, function (err, client) {
+		datetime = new Date();
+		let collection = client.db(req.params.server);
+		let document = {
+			date: datetime.toISOString().slice(0, 10),
+			time: datetime.toISOString().slice(11, 16),
+			type: req.query.type,
+			description: req.query.desc,
+		};
+		console.log(document);
+		collection.collection("issues").insertOne(document, function (err, res) {
+			if (err) throw err;
+			console.log("Collection created!");
+		});
+
+		if (err) throw err;
+		res.send("created");
+	});
+});
+
 app.get("/api/server/:server/issues/", (req, res) => {
-	res.send();
+	MongoClient.connect(url, function (err, client) {
+		let collection = client.db(req.params.server);
+
+		collection
+			.collection("issues")
+			.find({})
+			.toArray(function (err, result) {
+				if (err) throw err;
+				console.log(result);
+				client.close();
+				res.send(result);
+			});
+		if (err) throw err;
+	});
+
 	console.log(req.query);
 	console.log(req.params);
 });
